@@ -220,7 +220,7 @@ const signup = async (req, res, next) => {
       const token = jwt.sign({ id: user._id, phone: user.phone }, ACCESS_TOKEN_SECRET);
   
       return res.status(200).json({
-        status: true,
+        success: true,
         message: 'Login Successfully.',
         data: {
           token,

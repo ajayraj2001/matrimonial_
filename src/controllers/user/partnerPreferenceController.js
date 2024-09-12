@@ -58,6 +58,7 @@ const partnerPreferences = async (req, res, next) => {
       return res
         .status(200)
         .json({
+          success: true,
           message: "Partner preferences updated successfully",
           data: existingPreferences,
         });
@@ -116,13 +117,14 @@ const partnerPreferences = async (req, res, next) => {
       return res
         .status(201)
         .json({
+          success: true,
           message: "Partner preferences created successfully",
           data: savedPreferences,
         });
     }
   } catch (error) {
     console.error("Error handling partner preferences:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({success: true, message: error.message });
   }
 };
 

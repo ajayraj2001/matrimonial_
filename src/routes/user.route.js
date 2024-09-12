@@ -19,7 +19,6 @@ userRoute.get("/profile", authenticateUser,  getProfile);
 userRoute.put("/profile", authenticateUser, updateProfile);
 userRoute.post("/deleteProfileImage", authenticateUser, deleteProfileImage);
 
-
 userRoute.post("/preferences", authenticateUser, partnerPreferences);
 
 
