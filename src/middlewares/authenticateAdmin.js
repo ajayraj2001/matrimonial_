@@ -7,8 +7,10 @@ const authenticateAdmin = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
 
+    
     const legit = verifyAccessToken(token);
-    const admin = await Admin.findById(legit.id);
+    const admin = await Admin.findById(legit._id);
+
     if (admin) {
       req.admin = admin;
       req.token = token;
@@ -20,4 +22,17 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = authenticateAdmin;
+const authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    if(!roles.includes(req.admin.role)) {
+      throw new ApiError('You are not allowed to access this resource', 403);
+    }
+
+    next();
+  };
+};
+
+module.exports = { 
+  authenticateAdmin, 
+  authorizeRoles 
+};

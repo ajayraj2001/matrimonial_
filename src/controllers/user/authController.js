@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken')
 const { ApiError } = require('../../errorHandler');
-const { User } = require('../../models');
+const User = require('../../models/user');
 const { getOtp } = require('../../utils');
 const { STATIC_OTP,  ACCESS_TOKEN_SECRET} = process.env;
 const  sendOtpEmail  = require('../../utils/sendOtpToEmail'); // Assuming you have a function to send SMS as well
@@ -113,7 +113,7 @@ const signup = async (req, res, next) => {
         message: `An OTP has been sent to the mobile ****${existingUser.phone.slice(-4)}.`,
       });
     } catch (error) {
-      console.log('error', error)
+      console.log('error', error);
       next(error);
     }
   };
@@ -121,14 +121,17 @@ const signup = async (req, res, next) => {
   const verifyOtpSignUp = async (req, res, next) => {
     try {
       const { phone, otp } = req.body;
+
+      
   
       // Validate input
       if (!phone || !otp) throw new ApiError('Phone and OTP are required', 400);
   
       // Find the admin by phone or email
       const user = await User.findOne({ phone:phone});
+      
       if (!user) throw new ApiError('User not found', 404);
-  
+      
       // Validate OTP
       if (Date.now() > new Date(user.otp_expiry).getTime()) throw new ApiError('OTP expired', 400);
       if (user.otp !== otp && otp !== STATIC_OTP ) throw new ApiError('Invalid OTP', 400);
@@ -196,7 +199,7 @@ const signup = async (req, res, next) => {
       next(error);
     }
   };
-  
+ 
   
   const verifyOtpLogin = async (req, res, next) => {
     try {
@@ -298,7 +301,6 @@ const signup = async (req, res, next) => {
       next(error);
     }
   };
-  
   
   
   module.exports = {signup, verifyOtpSignUp, login, verifyOtpLogin, forgotPassword, resetPassword};

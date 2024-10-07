@@ -2,8 +2,8 @@ const multer = require('multer');
 const fs = require('fs');
 const {ApiError} = require('../errorHandler')
 
-function getFileUploader(fieldName, publicDirName = '', mimetypes) {
-  if (!mimetypes) mimetypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/avif'];
+function getFileUploader(fieldName, publicDirName = '') {
+  //if (!mimetypes) mimetypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/avif'];
 
   const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -25,14 +25,14 @@ function getFileUploader(fieldName, publicDirName = '', mimetypes) {
   });
   const upload = multer({
     storage: storage,
-    fileFilter: (req, file, cb) => {
-      mimetypes.includes(file.mimetype) ? cb(null, true) : cb(new ApiError('Invalid image type', 400));
-    },
+    // fileFilter: (req, file, cb) => {
+    //   mimetypes.includes(file.mimetype) ? cb(null, true) : cb(new ApiError('Invalid image type', 400));
+    // },
     limits: {
-      fileSize: 10 * 1024 * 1024 // 5 MB size limit
+      fileSize: 10 * 1024 * 1024 // 10 MB size limit
     }
   }).single(fieldName);
   return upload;
 }
 
-module.exports = {getFileUploader};
+module.exports = { };
