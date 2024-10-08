@@ -5,9 +5,11 @@ const { getCountries, getStates, getCities, getProfile, updateProfile, deletePro
 const { partnerPreferences, getPreference, matchedUsers, singleMatchedUser } = require("../controllers/user/partnerPreferenceController");
 const { sendOrUpdateRequest, sentRequestTo, gotRequestFrom } = require("../controllers/user/requestedUserController");
 const { createQuery, getQueryData } = require("../controllers/user/supportController");
-const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionController");
+const { getAllSubscriptionPlans } = require("../controllers/user/subscriptionPlansController");
 const { getReligions, getCastes } = require("../controllers/user/religionAndCasteController");
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
+const { purchaseSubscription } = require("../controllers/user/purchaseSubscriptionController");
+const getFaqs = require("../controllers/user/getAllFaqsController.js");
 
 const userRoute = require("express").Router();
 
@@ -20,8 +22,8 @@ userRoute.post("/forget_password", forgotPassword);
 userRoute.post("/reset_password", resetPassword);
 
 // Update Profile
-userRoute.get("/religions", getReligions);
-userRoute.get("/castes", getCastes);
+userRoute.post("/religions", getReligions);
+userRoute.post("/castes", getCastes);
 
 userRoute.post("/country", getCountries);
 userRoute.post("/states", getStates);
@@ -43,8 +45,14 @@ userRoute.post("/send_request", authenticateUser, sendOrUpdateRequest);
 userRoute.get("/requested_to", authenticateUser, sentRequestTo);
 userRoute.get("/requested_by", authenticateUser, gotRequestFrom);
 
-// Subscription
+// Subscription Plans
 userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
+
+// Purchase Subscription
+userRoute.post("/purchase_subscription", authenticateUser, purchaseSubscription);
+
+// Faqs
+userRoute.get("/get_faqs", authenticateUser, getFaqs);
 
 // Support (Query)
 userRoute.post("/submit_query", authenticateUser, createQuery);

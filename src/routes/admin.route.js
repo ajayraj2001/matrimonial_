@@ -1,12 +1,8 @@
 const { registerAdmin, logInAdmin } = require("../controllers/admin/adminAuthController");
 const { createCaste, getCastes, updateCaste, deleteCaste } = require("../controllers/admin/casteController");
+const { createFaq, getFaqs, updateFaq, deleteFaq } = require("../controllers/admin/faqController");
 const { createReligion, getReligions, updateReligion, deleteReligion } = require("../controllers/admin/religionController");
-const { 
-    createSubscriptionPlan, 
-    getAllSubscriptionPlans, 
-    updateSubscriptionPlan, 
-    deleteSubscriptionPlan 
-} = require("../controllers/admin/subscriptionPlanController");
+const { createSubscriptionPlan, getAllSubscriptionPlans, updateSubscriptionPlan, deleteSubscriptionPlan } = require("../controllers/admin/subscriptionPlanController");
 const { getAllSupportQueries, updateSupportQuery, deleteSupportQuery } = require("../controllers/admin/supportListController");
 const { createDetails, updateDetails } = require("../controllers/admin/termsPrivacyAboutController");
 const { getAllUsers, deleteUser } = require("../controllers/admin/userListController");
@@ -14,12 +10,12 @@ const { authenticateAdmin, authorizeRoles } = require("../middlewares/authentica
 
 const adminRoute = require("express").Router();
 
-// //---------- admin auth ----------
+// -------------- admin auth ---------------
 adminRoute.post("/register", registerAdmin);
 adminRoute.post("/login", logInAdmin);
+//adminRoute.patch("/profile", authenticateAdmin, getProfile);
 // adminRoute.post("/forget_password", forgetPassword);
 // adminRoute.post("/reset_password", resetPassword);
-// adminRoute.get("/profile", authenticateAdmin, getProfile);
 // adminRoute.put("/profile", authenticateAdmin, updateProfile);
 // adminRoute.put("/change_password", authenticateAdmin, changePassword);
 
@@ -55,8 +51,11 @@ adminRoute.delete("/delete_single_query/:id", authenticateAdmin, deleteSupportQu
 adminRoute.post("/terms_privacy_about", authenticateAdmin, createDetails);
 adminRoute.patch("/update_terms_privacy_about", authenticateAdmin, updateDetails);
 
-// //dashboard
-// adminRoute.get("/dashboard", authenticateAdmin, adminDashboard)
+// ------------- Faq ---------------------
+adminRoute.post("/add_faq", authenticateAdmin, createFaq);
+adminRoute.get("/get_all_faqs", authenticateAdmin, getFaqs);
+adminRoute.patch("/update_single_faq/:id", authenticateAdmin, updateFaq);
+adminRoute.delete("/delete_single_faq/:id", authenticateAdmin, deleteFaq);
 
 // //------getActiveUses--------
 // adminRoute.get("/getAllUsers", authenticateAdmin, getUsers)

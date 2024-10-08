@@ -194,7 +194,7 @@ const updateProfile = async (req, res, next) => {
         { id: user._id, email: user.email },
         ACCESS_TOKEN_SECRET,
         {
-          expiresIn: "2d",
+          expiresIn: "180d",
         }
       );
 

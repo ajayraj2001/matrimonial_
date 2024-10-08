@@ -43,7 +43,7 @@ const deleteUser = asyncHandler(async (req, res, next) => {
       success: true,
       message: 'User deleted successfully',
     });
-  });
+});
 
 module.exports = { 
     getAllUsers,

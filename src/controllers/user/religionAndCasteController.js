@@ -15,7 +15,7 @@ const getReligions = asyncHandler(async (req, res, next) => {
 });
 
 const getCastes = asyncHandler(async (req, res, next) => {
-    const { id: religionId, searchTerm } = req.query;
+    const { id: religionId, searchTerm } = req.body;
   
     const query = { religion: religionId };
   
