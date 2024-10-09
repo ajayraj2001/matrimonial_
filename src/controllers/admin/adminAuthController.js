@@ -37,20 +37,19 @@ const registerAdmin = asyncHandler(async (req, res, next) => {
     //passwordChangedAt: Date.now(),
   });
 
-  res.status(201) .json({
+  res.status(201).json({
     success: true,
-    message: "Admin created successfully."
-  })
-
+    message: "Admin created successfully.",
+  });
 });
 
 const logInAdmin = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
-  
-    if (!email || validator.isEmail(email) === false) {
-      return next(new ApiError("Enter a valid email address.", 400));
-    }
-  
+
+  if (!email || validator.isEmail(email) === false) {
+    return next(new ApiError("Enter a valid email address.", 400));
+  }
+
   if (!password) return next(new ApiError("Password is required.", 400));
 
   const admin = await Admin.findOne({ email });
@@ -62,18 +61,20 @@ const logInAdmin = asyncHandler(async (req, res, next) => {
 
   if (!match) return next(new ApiError("Invalid Credential.", 403));
 
-  const token = jwt.sign({ _id: admin._id, email: admin.email }, ACCESS_TOKEN_SECRET, { expiresIn: "180d" });
+  const token = jwt.sign(
+    { _id: admin._id, email: admin.email },
+    ACCESS_TOKEN_SECRET,
+    { expiresIn: "180d" }
+  );
 
-  res.status(201) .json({
+  res.status(201).json({
     success: true,
     message: "You have logged in successfully.",
-    token
-  })
-
+    token,
+  });
 });
 
 module.exports = {
-    registerAdmin,
-    logInAdmin
+  registerAdmin,
+  logInAdmin,
 };
-  

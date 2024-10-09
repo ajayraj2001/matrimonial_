@@ -25,6 +25,7 @@
 
 process.on("uncaughtException", (err) => {
   console.log(err.name, err.message);
+  console.log(err.stack);
   process.exit(1);
 });
 
@@ -33,6 +34,13 @@ const mongoose = require("mongoose");
 const { connectToDatabase } = require("./config");
 const app = require("./src/app");
 const http = require("http");
+const Message = require("./src/models/message");
+const {
+  sendMessage,
+  editMessage,
+  deleteForEveryone,
+  deleteForMe,
+} = require("./src/utils/messagingOperations");
 const { Server } = require("socket.io");
 
 const { PORT, BASE_URL } = process.env;
@@ -57,30 +65,92 @@ let server;
 
     const users = {};
 
-    app.locals.io = io;
-    app.locals.users = users;
-
     // Handle Socket.IO connections
     io.on("connection", (socket) => {
       console.log("A user connected:", socket.id);
 
-      const userId = socket.handshake.query.userId;
-      if (userId) {
-        users[userId] = socket.id;
-        console.log("Hello ", users);
-      }
-
-      // get userId from an event triggred in frontend named 'setup'
-      socket.on("setup", (userData) => {
-        if (userData && userData._id) {
-          users[userData._id] = socket.id;
-          console.log(`${userData._id} joined`);
+      socket.on("join", (userId) => {
+        if (userId) {
+          users[userId] = socket.id;
+          console.log(`User with ID ${userId} joined`);
         }
       });
 
-      // You can set up events here
+      // Handling sending a new message
+      socket.on("sendMessage", async (data) => {
+        const { senderId, recipientId, messageText } = data;
+        const message = await sendMessage(senderId, recipientId, messageText);
+
+        // Emit the message to the recipient if they are online
+        if (users[recipientId]) {
+          io.to(users[recipientId]).emit("newMessage", message);
+        }
+      });
+
+      // Handle message edit
+      socket.on("editMessage", async (data) => {
+        const { messageId, newMessageText, senderId } = data;
+        const updatedMessage = await editMessage(
+          messageId,
+          newMessageText,
+          senderId
+        );
+
+        // Emit the edited message to both participants
+        if (users[updatedMessage.recipient]) {
+          io.to(users[updatedMessage.recipient]).emit(
+            "messageEdited",
+            updatedMessage
+          );
+        }
+        if (users[updatedMessage.sender]) {
+          io.to(users[updatedMessage.sender]).emit(
+            "messageEdited",
+            updatedMessage
+          );
+        }
+      });
+
+      // Handle delete for everyone
+      socket.on("deleteForEveryone", async (data) => {
+        const { messageId, userId } = data;
+        const message = await deleteForEveryone(messageId, userId);
+
+        // Emit the delete event to both participants
+        if (users[message.recipient]) {
+          io.to(users[message.recipient]).emit("messageDeletedForEveryone", {
+            messageId,
+          });
+        }
+        if (users[message.sender]) {
+          io.to(users[message.sender]).emit("messageDeletedForEveryone", {
+            messageId,
+          });
+        }
+      });
+
+      // Handle delete for self
+      socket.on("deleteForMe", async (data) => {
+        const { messageId, userId } = data;
+        const message = await deleteForMe(messageId, userId);
+
+        // Emit the delete event only to the user who requested the deletion
+        if (users[userId]) {
+          io.to(users[userId]).emit("messageDeletedForMe", { messageId });
+        }
+      });
+
+      // On client disconnect
       socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
+
+        // Remove from online users
+        for (const [userId, socketId] of Object.entries(users)) {
+          if (socketId === socket.id) {
+            delete users[userId];
+            break;
+          }
+        }
       });
     });
 
@@ -101,6 +171,7 @@ async function shutdown(err) {
 
 process.on("unhandledRejection", (err) => {
   console.log(err.name, err.message);
+  console.log(err.stack);
   server.close(() => {
     process.exit(1);
   });

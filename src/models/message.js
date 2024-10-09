@@ -1,15 +1,19 @@
-const mongoose= require("mongoose");
+const mongoose = require("mongoose");
 
-const messageSchema = new mongoose.Schema(
-    {
-      senderId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-      receiverId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-      message: { type: String, required: true },
-      createdAt : { type : Date, default : Date.now }
-    },
-    
-  );
-  
-  const Message = mongoose.model("message", messageSchema);
+const messageSchema = new mongoose.Schema({
+  sender: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  recipient: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  message: { type: String, required: true },
+  timestamp: { type: Date, default: Date.now },
+  isRead: { type: Boolean, default: false },
+  edited: { type: Boolean, default: false },
+  deletedForEveryone: { type: Boolean, default: false },
+  deletedForUser: { type: Boolean, default: false },
+});
 
-  module.exports = Message;
+// Create an index for faster retrieval based on sender and recipient
+messageSchema.index({ sender: 1, recipient: 1, timestamp: -1 });
+
+const Message = mongoose.model("Message", messageSchema);
+
+module.exports = Message;

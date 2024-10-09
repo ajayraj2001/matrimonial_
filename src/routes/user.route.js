@@ -22,12 +22,12 @@ userRoute.post("/forget_password", forgotPassword);
 userRoute.post("/reset_password", resetPassword);
 
 // Update Profile
-userRoute.post("/religions", getReligions);
-userRoute.post("/castes", getCastes);
+userRoute.post("/religions", authenticateUser, getReligions);
+userRoute.post("/castes", authenticateUser, getCastes);
 
-userRoute.post("/country", getCountries);
-userRoute.post("/states", getStates);
-userRoute.post("/cities", getCities);
+userRoute.post("/country", authenticateUser, getCountries);
+userRoute.post("/states", authenticateUser, getStates);
+userRoute.post("/cities", authenticateUser, getCities);
 
 userRoute.get("/profile", authenticateUser,  getProfile);   
 userRoute.put("/profile", authenticateUser, updateProfile);

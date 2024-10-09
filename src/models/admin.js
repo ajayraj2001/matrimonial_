@@ -9,7 +9,7 @@ const admin = new mongoose.Schema(
     password: { type: String, required: true },
     otp: { type: String, default: "" },
     otp_expiry: { type: Date, default: Date.now },
-    profile_image: { type: String, default: null },
+    profile_image: { type: String, default: "" },
   },
   {
     timestamps: {

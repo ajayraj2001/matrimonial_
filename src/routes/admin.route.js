@@ -5,15 +5,19 @@ const { createReligion, getReligions, updateReligion, deleteReligion } = require
 const { createSubscriptionPlan, getAllSubscriptionPlans, updateSubscriptionPlan, deleteSubscriptionPlan } = require("../controllers/admin/subscriptionPlanController");
 const { getAllSupportQueries, updateSupportQuery, deleteSupportQuery } = require("../controllers/admin/supportListController");
 const { createDetails, updateDetails } = require("../controllers/admin/termsPrivacyAboutController");
+const { updateAdmin } = require("../controllers/admin/updateAdminProfile.controller");
 const { getAllUsers, deleteUser } = require("../controllers/admin/userListController");
 const { authenticateAdmin, authorizeRoles } = require("../middlewares/authenticateAdmin");
+const { getFileUploader } = require("../middlewares/fileUpload");
 
 const adminRoute = require("express").Router();
 
 // -------------- admin auth ---------------
 adminRoute.post("/register", registerAdmin);
 adminRoute.post("/login", logInAdmin);
-//adminRoute.patch("/profile", authenticateAdmin, getProfile);
+
+const upload = getFileUploader("profile_image", "uploads/admin"); // 
+adminRoute.patch("/profile", authenticateAdmin, upload, updateAdmin);
 // adminRoute.post("/forget_password", forgetPassword);
 // adminRoute.post("/reset_password", resetPassword);
 // adminRoute.put("/profile", authenticateAdmin, updateProfile);
