@@ -10,6 +10,7 @@ const { getReligions, getCastes } = require("../controllers/user/religionAndCast
 const getDetailsById = require("../controllers/user/getTermsPrivacyAboutController");
 const { purchaseSubscription } = require("../controllers/user/purchaseSubscriptionController");
 const getFaqs = require("../controllers/user/getAllFaqsController.js");
+const { chatList, getChatMessages } = require("../controllers/user/messageController.js");
 
 const userRoute = require("express").Router();
 
@@ -50,6 +51,10 @@ userRoute.get("/subscription_plans", authenticateUser, getAllSubscriptionPlans);
 
 // Purchase Subscription
 userRoute.post("/purchase_subscription", authenticateUser, purchaseSubscription);
+
+// chat message
+userRoute.get("/chat_list", authenticateUser, chatList);
+userRoute.get("/get_messages/:id", authenticateUser, getChatMessages);
 
 // Faqs
 userRoute.get("/get_faqs", authenticateUser, getFaqs);

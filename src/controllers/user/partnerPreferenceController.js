@@ -283,10 +283,6 @@ const matchedUsers = async (req, res, next) => {
     //   query.marital_status = marital_status;
     // }
 
-    if (manglik && manglik !== "Any") { 
-      query.manglik = manglik;
-    }
-
     if(start && end) {
       query.created_at = {
         $gte: start,

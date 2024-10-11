@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const { Message } = require("../models");
 
 const sendMessage = async (senderId, recipientId, messageText) => {

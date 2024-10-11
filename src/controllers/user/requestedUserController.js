@@ -78,7 +78,9 @@ const gotRequestFrom = asyncHandler(async (req, res, next) => {
 
     const user = req.user._id;
 
-    const requestedBy = await RequestedUser.find({ userRequestedTo : user }).populate({
+    const requestedBy = await RequestedUser.find({ userRequestedTo : user, status : { $ne : "Ignore" } })
+    .sort({ createdAt: -1 })
+    .populate({
         path : "user",
         select : "fullName height city profile_image"
     });
