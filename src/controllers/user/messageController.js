@@ -3,9 +3,33 @@ const { User, Message } = require("../../models");
 const asyncHandler = require("../../utils/asyncHandler");
 const { ApiError } = require("../../errorHandler");
 
+// const checkChatEligibility = asyncHandler(async (req, res, next) => {
+
+//   const userId = req.user._id;
+
+//   const user = await User.findById(userId);
+
+//   const currentDate = new Date(Date.now() + 5.5 * 60 * 60 * 1000);
+
+//   const obj = {};
+
+//   // Check if the user has a valid subscription
+//   if (user.subscriptionExpiryDate && user.subscriptionExpiryDate > currentDate) obj.isSubscribed = true;
+//   else obj.isSubscribed = false;
+    
+//   obj.noOfFreeMessages = user.freeMessages;
+
+//   res.status(200).json({
+//     success: true,
+//     message: "Message data fetched successfully",
+//     data: obj,
+//   });
+
+// });
+
+
 
 const chatList = asyncHandler(async (req, res, next) => {
-
   const userId = req.user._id;
 
   const recentChats = await Message.aggregate([
@@ -18,7 +42,6 @@ const chatList = asyncHandler(async (req, res, next) => {
       }
     },
     {
-      // Group by the other user in the conversation
       $group: {
         _id: {
           $cond: {
@@ -29,15 +52,30 @@ const chatList = asyncHandler(async (req, res, next) => {
         },
         lastMessage: { $last: '$message' },
         lastMessageTime: { $last: '$timestamp' },
-        unreadCount: { $sum: { $cond: [{ $eq: ['$isRead', false] }, 1, 0] } }
+        unreadCountForRecipient: {
+          $sum: {
+            $cond: [
+              { $and: [{ $eq: ['$recipient', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+              1,
+              0
+            ]
+          }
+        },
+        unreadCountForSender: {
+          $sum: {
+            $cond: [
+              { $and: [{ $eq: ['$sender', new mongoose.Types.ObjectId(userId)] }, { $eq: ['$isRead', false] }] },
+              1,
+              0
+            ]
+          }
+        }
       }
     },
     {
-      // Sort by the most recent message time
       $sort: { lastMessageTime: -1 }
     },
     {
-      // Lookup to get user details of the other user
       $lookup: {
         from: 'users',
         localField: '_id',
@@ -46,19 +84,23 @@ const chatList = asyncHandler(async (req, res, next) => {
       }
     },
     {
-      // Unwind the user array
       $unwind: '$user'
     },
     {
-      // Project the necessary fields, including the first image from profilePic array
       $project: {
         _id: 0,
         userId: '$_id',
         userName: '$user.fullName',
-        userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] }, // Get the first image from the array
+        userProfilePic: { $arrayElemAt: ['$user.profile_image', 0] },
         lastMessage: 1,
         lastMessageTime: 1,
-        unreadCount: 1
+        unreadCount: {
+          $cond: {
+            if: { $eq: ['$userId', new mongoose.Types.ObjectId(userId)] },
+            then: '$unreadCountForSender',
+            else: '$unreadCountForRecipient'
+          }
+        }
       }
     }
   ]);
@@ -68,54 +110,8 @@ const chatList = asyncHandler(async (req, res, next) => {
     message: "Chats fetched successfully",
     data: recentChats,
   });
-
 });
 
-
-const sendMessage = asyncHandler(async (req, res, next) => {
-  const { receiverId, message } = req.body;
-  const senderId = req.user._id; // Assuming the authenticated user is the sender
-
-  // Check if receiver exists
-  const receiver = await User.findById(receiverId);
-  if (!receiver) {
-    return next(new ApiError("Receiver not found", 404));
-  }
-
-  // Fetch the sender details
-  const sender = await User.findById(senderId);
-
-  if (!sender) {
-    return next(new ApiError("Sender not found", 404));
-  }
-
-  // Check if the sender is subscribed
-  if (!sender.isSubscribed) {
-    // Check the number of messages already sent by this sender to this receiver
-    const messageCount = await Message.countDocuments({
-      senderId,
-      receiverId,
-    });
-
-    // Limit to 3 messages if the sender is not subscribed
-    if (messageCount >= 3) {
-      return next(new ApiError("You have reached your message limit to this user. Please subscribe to send more messages.", 403));
-    }
-  }
-
-  // Create and save the new message
-  const newMessage = await Message.create({
-    senderId,
-    receiverId,
-    message,
-  });
-
-  return res.status(201).json({
-    success: true,
-    message: "Message sent successfully",
-    data: newMessage,
-  });
-});
 
 
 const getChatMessages  = asyncHandler(async (req, res, next) => {
@@ -125,6 +121,16 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
 
   const pageNum = parseInt(page) || 1;
   const limitNum = parseInt(limit) || 30;
+
+  // Update the isRead status for all messages where the recipient matches the current user
+  const result = await Message.updateMany(
+    {
+      sender: receiverId,
+      recipient: senderId,
+      isRead: false, // Only update unread messages
+    },
+    { isRead: true } // Set isRead to true
+  );
 
   const messages = await Message.find({
     $or: [
@@ -158,7 +164,7 @@ const getChatMessages  = asyncHandler(async (req, res, next) => {
 
 
 module.exports = {
-  chatList, 
-  sendMessage, 
+  //checkChatEligibility,
+  chatList,
   getChatMessages
 };

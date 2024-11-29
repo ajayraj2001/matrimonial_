@@ -142,18 +142,19 @@ const verifyOtpSignUp = async (req, res, next) => {
     const { phone, otp } = req.body;
 
     // Validate input
-    if (!phone || !otp) throw new ApiError("Phone and OTP are required", 400);
+    if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
 
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
 
-    if (!user) throw new ApiError("User not found", 404);
+    if (!user) return next(new ApiError("User not found", 404));
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      throw new ApiError("OTP expired", 400);
+      return next(new ApiError("OTP expired", 400));
+
     if (user.otp !== otp && otp !== STATIC_OTP)
-      throw new ApiError("Invalid OTP", 400);
+      return next(new ApiError("Invalid OTP", 400));
 
     user.active = true;
 
@@ -173,14 +174,14 @@ const login = async (req, res, next) => {
   try {
     let { phone, email, loginType } = req.body;
 
-    if (!loginType) throw new ApiError("Login type is required.", 400);
+    if (!loginType) return next(new ApiError("Login type is required.", 400));
 
     if (loginType === "phone") {
-      if (!phone) throw new ApiError("Phone is required.", 400);
+      if (!phone) return next(new ApiError("Phone is required.", 400));
 
       // Find the user by phone
       const user = await User.findOne({ phone, active: true });
-      if (!user) throw new ApiError("User not found with this phone.", 403);
+      if (!user) return next(new ApiError("User not found with this phone.", 403));
 
       const otp = getOtp();
       const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
@@ -197,16 +198,16 @@ const login = async (req, res, next) => {
         )}.`,
       });
     } else if (loginType === "social") {
-      if (!email)
-        throw new ApiError("Email is required for social login.", 400);
+      if (!email) 
+        return next(new ApiError("Email is required for social login.", 400));
 
       // Find the user by email
       const user = await User.findOne({ email });
-      if (!user) throw new ApiError("User not found with this email.", 403);
+      if (!user) return next(new ApiError("User not found with this email.", 403));
 
       // Generate JWT token
       const token = jwt.sign({ id: user._id }, ACCESS_TOKEN_SECRET, {
-        expiresIn: "2d",
+        expiresIn: "180d",
       });
 
       return res.status(200).json({
@@ -214,8 +215,9 @@ const login = async (req, res, next) => {
         message: "Login successful.",
         token,
       });
+      
     } else {
-      throw new ApiError("Invalid login type.", 400);
+      return next(new ApiError("Invalid login type.", 400));
     }
   } catch (error) {
     next(error);
@@ -224,24 +226,27 @@ const login = async (req, res, next) => {
 
 const verifyOtpLogin = async (req, res, next) => {
   try {
-    const { phone, otp } = req.body;
+    const { phone, otp, deviceId, deviceToken } = req.body;
 
     // Validate input
-    if (!phone || !otp) throw new ApiError("Phone and OTP are required", 400);
+    if (!phone || !otp) return next(new ApiError("Phone and OTP are required.", 400));
 
     // Find the admin by phone or email
     const user = await User.findOne({ phone: phone });
-    if (!user) throw new ApiError("User not found", 404);
+    if (!user) return next(new ApiError("User not found", 404));
 
     // Validate OTP
     if (Date.now() > new Date(user.otp_expiry).getTime())
-      throw new ApiError("OTP expired", 400);
+      return next(new ApiError("OTP expired", 400));
+
     if (user.otp !== otp && otp !== STATIC_OTP)
-      throw new ApiError("Invalid OTP", 400);
+      return next(new ApiError("Invalid OTP", 400));
 
     user.active = true;
+    user.deviceId = deviceId;
+    user.deviceToken = deviceToken;
 
-    user.save();
+    await user.save();
 
     const token = jwt.sign(
       { id: user._id, phone: user.phone },
@@ -253,7 +258,7 @@ const verifyOtpLogin = async (req, res, next) => {
 
     return res.status(200).json({
       success: true,
-      message: "Login Successfully.",
+      message: "You have Successfully Logged in.",
       data: {
         token,
         user,
@@ -267,14 +272,14 @@ const verifyOtpLogin = async (req, res, next) => {
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
-    if (!email) throw new ApiError("Email is required", 400);
+    if (!email) return next(new ApiError("Email is required.", 400));
 
     // Find the user by either phone or email
     const user = await User.findOne({
       email: email,
     });
 
-    if (!user) throw new ApiError("User not found with this email", 404);
+    if (!user) return next(new ApiError("User not found with this email", 404));
 
     const otp = getOtp();
     const otpExpiry = new Date(Date.now() + 2 * 60 * 1000);
@@ -304,19 +309,19 @@ const resetPassword = async (req, res, next) => {
     const { email, newPassword } = req.body;
 
     // Validate input
-    if (!email || !newPassword)
-      throw new ApiError("Email and new password are required", 400);
+    if (!email || !newPassword) 
+      return next(new ApiError("Email and new password are required.", 400));
 
     // Find the admin by email
     const user = await User.findOne({ email });
-    if (!user) throw new ApiError("Admin not found", 404);
+    if (!user) return next(new ApiError("User not found.", 400));
 
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Update the admin's password
     user.password = hashedPassword;
-    user.otp = null; // Clear the OTP after successful password reset
+    user.otp = null; 
     user.otp_expiry = null;
     await user.save();
 

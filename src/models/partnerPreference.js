@@ -22,8 +22,6 @@ const partnerPreferencesSchema = new mongoose.Schema(
     residential_status: { type: String, required: true }, // e.g., 'Citizen', 'Permanent Resident', etc.
     manglik: { type: String, required: true },
     highest_education: { type: String, required: true },
-    college_name: { type: String, required: true },
-    company_name: { type: String, required: true },
     employed_in: { type: String, required: true },
     occupation: { type: String, required: true },
     annual_income: { type: String, required: true },

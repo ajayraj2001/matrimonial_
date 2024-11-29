@@ -3,11 +3,12 @@ const { ApiError } = require("../../errorHandler");
 const { SubscriptionPlan } = require("../../models");
 
 const createSubscriptionPlan = asyncHandler(async (req, res, next) => {
-    const { planName, price, durationInDays } = req.body;
+    const { planName, price, maxPhoneNumbersViewable, durationInDays } = req.body;
   
     const subscriptionPlan = await SubscriptionPlan.create({
       planName,
       price,
+      maxPhoneNumbersViewable,
       durationInDays,
     });
   

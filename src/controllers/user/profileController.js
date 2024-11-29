@@ -4,6 +4,8 @@ const { deleteOldFile } = require("../../utils");
 const User = require("../../models/user");
 const { Country, State, City } = require("country-state-city");
 const jwt = require("jsonwebtoken");
+const parseDate = require("../../utils/parseDate");
+const convertHeightToCM = require("../../utils/convertHeightToCM");
 const { ACCESS_TOKEN_SECRET } = process.env;
 
 const getCountries = async (req, res, next) => {
@@ -96,7 +98,9 @@ const updateProfile = async (req, res, next) => {
       if (error) throw new ApiError(error.message, 400);
 
       const userId = req.user._id;
-      let { fullName, type, email, phone, annual_income, height, longitude, latitude, ...otherFields } = req.body;
+      let { fullName, type, email, phone, heightInFeet, heightInInches, annual_income, dob, height, longitude, latitude, ...otherFields } = req.body;
+      heightInFeet = +heightInFeet;
+      heightInInches = +heightInInches;
 
       const user = await User.findById(userId).select("-password");
       console.log("user", user);
@@ -121,7 +125,7 @@ const updateProfile = async (req, res, next) => {
           _id: { $ne: userId },
         });
         if (existingUser) {
-          throw new ApiError("Email is already in use by another account", 400);
+          return next(new ApiError("Email is already in use by another account", 400));
         }
         user.email = email;
       }
@@ -132,19 +136,24 @@ const updateProfile = async (req, res, next) => {
           _id: { $ne: userId },
         });
         if (existingUser) {
-          throw new ApiError("Phone is already in use by another account", 400);
+          return next(new ApiError("Phone is already in use by another account", 400));
         }
         user.phone = phone;
       }
 
-      if (annual_income) user.annual_income = +annual_income;
-
-      if (height) {
-        user.height = height;
-        const heightInCm = Math.round(parseFloat(height.split(" ")[1]));
-        user.heightInCm = heightInCm;
+      if (dob) {
+        const dateOfBirth = parseDate(dob);
+        user.dob = dateOfBirth;
       }
 
+      if (annual_income) user.annual_income = +annual_income;
+
+      if (heightInFeet && heightInInches) {
+        const heightData = convertHeightToCM(heightInFeet, heightInInches);
+        const heightInCm = Math.round(parseFloat(heightData));
+        user.height = `${heightInFeet} ft ${heightInInches} in`
+        user.heightInCm = heightInCm;
+      }
 
       // Update latitude and longitude if provided
       if (longitude && latitude) {
@@ -175,7 +184,7 @@ const updateProfile = async (req, res, next) => {
               // Replace the image at the specific index
               user.profile_image[imageIndex] = updatedImages[0];
             } else {
-              throw new ApiError("Invalid image index", 400);
+              return next(new ApiError("Invalid image index", 400));
             }
           } else {
             // Append new images to the existing array
@@ -189,6 +198,11 @@ const updateProfile = async (req, res, next) => {
 
       // Save the updated user profile
       await user.save();
+
+      if (user.profile_image.length > 0) {
+        user.profileStatus = "Complete";
+        await user.save();
+      }
 
       const token = jwt.sign(
         { id: user._id, email: user.email },
@@ -258,6 +272,18 @@ const deleteProfileImage = async (req, res, next) => {
   }
 };
 
+const deleteProfile = async (req, res, next) => {
+  const userId = req.user._id;
+
+  await User.findByIdAndUpdate(userId, { active : false });
+
+  return res.status(200).json({
+    success: true,
+    message: "You have successfully deleted your profile."
+  });
+
+}
+
 module.exports = {
   getCountries,
   getStates,
@@ -265,4 +291,5 @@ module.exports = {
   getProfile,
   updateProfile,
   deleteProfileImage,
+  deleteProfile
 };

@@ -23,8 +23,7 @@ const userSchema = new mongoose.Schema(
     marital_status: { type: String, enum: ['Single', 'Married', 'Divorced', 'Widowed'] },
     height: { type: String,default: ''}, 
     heightInCm: { type: Number, default: 0 }, 
-    freeMessages: { type: Number, default: 3 }, 
-    isSubscribed : {type : Boolean, default : false },
+    //freeMessages: { type: Number, default: 3 }, 
     subscriptionExpiryDate: { type : Date },
     country: { type: String,default: ''},
     state: { type: String ,default: ''},
@@ -38,14 +37,17 @@ const userSchema = new mongoose.Schema(
     mother_tongue: { type: String,default: ''},
     religion: { type: String,default: ''},
     caste: { type: String,default: ''},
-    thoughts_on_horoscope: { type: String ,default: ''}, // e.g., 'Not Important', 'Important', etc.
+    thoughts_on_horoscope: { type: String ,default: ''}, // e.g., 'Yes', 'No'
     manglik: { type: String,default: ''},
     description: { type: String, default: '' },
     profileStatus: {type: String, enum: ['Complete', 'Incomplete'], default: 'Incomplete' },
+    deviceId: { type : String, default: '' },
+    deviceToken: { type : String, default: '' },
     location: {
       type: { type: String, enum: ['Point'], default: 'Point' }, // , required: true
       coordinates: { type: [Number] } // , required: true
-    }
+    },
+    maxPhoneNumbersViewable: { type: Number, default: 0 }
   },
   {
     timestamps: {

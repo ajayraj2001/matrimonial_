@@ -65,11 +65,4 @@ adminRoute.delete("/delete_single_faq/:id", authenticateAdmin, deleteFaq);
 // adminRoute.get("/getAllUsers", authenticateAdmin, getUsers)
 // adminRoute.put("/updateUser", authenticateAdmin, updateUser)
 
-
-// //---------- appData --------
-// adminRoute.post("/appData", authenticateAdmin, createAppData);
-// adminRoute.get("/appData", authenticateAdmin, getAllAppData);
-// adminRoute.patch("/appData/:id", authenticateAdmin, updateAppData);
-// adminRoute.delete("/appData/:id", authenticateAdmin, deleteAppData);
-
 module.exports = adminRoute;

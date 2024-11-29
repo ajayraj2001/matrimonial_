@@ -9,7 +9,6 @@ const mongoose = require("mongoose");
 const { connectToDatabase } = require("./config");
 const app = require("./src/app");
 const http = require("http");
-const Message = require("./src/models/message");
 const {
   sendMessage,
   editMessage,
@@ -46,24 +45,36 @@ let server;
 
       socket.on("join", (userId) => {
         if (userId) {
-          users[userId] = socket.id;
+          //users[userId] = socket.id;
+          users[userId] = { socketId: socket.id, status: "online" };
           console.log(`User with ID ${userId} joined`);
-          console.log("💖❤💖❤😉😎", users);
+
+          // Notify others about the user's online status
+          socket.broadcast.emit("userStatus", { userId, status: "online" });
         }
       });
 
       // Handling sending a new message
       socket.on("sendMessage", async (data) => {
         const { senderId, recipientId, messageText } = data;
+
         const message = await sendMessage(senderId, recipientId, messageText);
 
         // Emit the message to the recipient if they are online
         if (users[recipientId]) {
-          io.to(users[recipientId]).emit("newMessage", message);
+          io.to(users[recipientId].socketId).emit("newMessage", message);
         }
 
-        console.log("🤣😁😃", message)
       });
+
+      socket.on("typing", (data) => {
+        const { senderId, recipientId } = data;
+    
+        if (users[recipientId]) {
+          io.to(users[recipientId].socketId).emit("userTyping", { senderId });
+        }
+      });
+    
 
       // Handle message edit
       socket.on("editMessage", async (data) => {
@@ -75,7 +86,6 @@ let server;
         );
 
         // Emit the edited message to both participants
-
         if (users[updatedMessage.recipient]) {
           io.to(users[updatedMessage.recipient]).emit(
             "messageEdited",
@@ -123,14 +133,22 @@ let server;
       socket.on("disconnect", () => {
         console.log("User disconnected:", socket.id);
 
+        //let disconnectedUserId = null;
+
         // Remove from online users
-        for (const [userId, socketId] of Object.entries(users)) {
-          if (socketId === socket.id) {
+        //for (const [userId, socketId] of Object.entries(users)) {
+        for (const [userId, user] of Object.entries(users)) {
+
+          if (user.socketId === socket.id) {
+            //disconnectedUserId = userId;
+            socket.broadcast.emit("userStatus", { userId, status: "offline" });
             delete users[userId];
             break;
           }
         }
+
       });
+
     });
 
     // Start the server
